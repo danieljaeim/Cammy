@@ -1,58 +1,48 @@
 import * as React from 'react';
-import { Button, Image, View } from 'react-native';
+import { Button, Image, View, Text, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Constants from 'expo-constants';
 import * as Permissions from 'expo-permissions';
-import API_KEY from '../cammy/apikey';
 import axios from 'react-native-axios';
+import API_KEY from './apikey';
+import * as WebBrowser from 'expo-web-browser';
 
-export default class Camera extends React.Component {
+export default class Landing extends React.Component {
     state = {
         image: null,
         imageURL: null,
-        token: null
+        token: null,
+        hasCameraPermission: null,
     };
 
     render() {
-        let { image } = this.state;
-
-        return (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <Button
-                    title="Please pick a photo from your camera roll, with a valid URL"
-                    onPress={this._takeImage}
-                />
-                {image &&
-                    <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />}
-            </View>
-        );
+        let { image, hasCameraPermission } = this.state;
+        if (hasCameraPermission === null) {
+            return <View />
+        } else if (hasCameraPermission === false) {
+            return <Text>Cammy has no access to the camera ;(</Text>
+        } else {
+            return (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Button
+                        title="Camera"
+                        onPress={this._takeImage}
+                    />
+                    {image &&
+                        <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />}
+                </View>
+            );
+        }
     }
 
     componentDidMount() {
         this.getPermissionAsync();
-        // var mins = new Date().getMinutes();
-        // if(mins == "00"){
-        //     await fetch('https://oauth2.googleapis.com/token', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json'
-        //         }, 
-        //         body: JSON.stringify({
-        //             code: 
-        //         })
-
-        //     })
-        //  }
-
-        // setInterval(tick, 1000);
     }
 
     getPermissionAsync = async () => {
         if (Constants.platform.ios) {
-            const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-            if (status !== 'granted') {
-                alert('Sorry, we need camera roll permissions to make this work!');
-            }
+            const { status } = await Permissions.askAsync(Permissions.CAMERA);
+            this.setState({ hasCameraPermission: status === 'granted' });
         }
     }
 
@@ -66,17 +56,26 @@ export default class Camera extends React.Component {
 
         if (!result.cancelled) {
             this.setState({ image: result.uri, imageURL: result.base64 });
+        } else {
+            return;
         }
 
         let returnValue = await this._callGoogleApi();
         console.log(returnValue);
+        returnValue = returnValue.trim().split(" ").join('');
+        await this._handleURLRedirect(returnValue);
+        
     };
+
+    _handleURLRedirect = async (returnValue) => {
+        let redirect = await WebBrowser.openBrowserAsync('http://' + returnValue);
+    }
 
     _callGoogleApi = async () => {
         try {
             let response = await axios({
                 method: 'POST',
-                url: 'https://vision.googleapis.com/v1/images:annotate',
+                url: `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`,
                 data: {
                     "requests": [
                         {
@@ -93,7 +92,6 @@ export default class Camera extends React.Component {
                 },
                 headers: {
                     "Content-type": 'application/json',
-                    "Authorization": `Bearer ` + 'ya29.c.KmOpB5f_bLqjCrYTdWPdW4GoMVYF3BHUxHuNYVxBEOvcLvU9YqU3NlhD5dGjUjuN3s01FGm2UW36MlRE2ASfAbYan7zTWDO-bhrFtHTJQwIMVsOL3w6aqQKMW5A7nu7G267ww1A'
                 }
             });
 
@@ -103,3 +101,5 @@ export default class Camera extends React.Component {
         }
     }
 }
+
+
