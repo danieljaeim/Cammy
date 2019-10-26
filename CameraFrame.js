@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, TouchableOpacity, Text, Dimensions } from 'react-native';
+import { View, Button, Text, Dimensions } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 
@@ -23,6 +23,7 @@ export default class CameraFrame extends React.Component {
 
     render() {
         const { hasCameraPermission, flashMode, type, capturing } = this.state;
+        const { _takePhoto } = this.props;
         const { width: winWidth, height: winHeight } = Dimensions.get('window');
         if (hasCameraPermission === null) {
             return <View />;
@@ -41,6 +42,10 @@ export default class CameraFrame extends React.Component {
                             position: 'relative',
                             top: 60
                         }}
+                    />
+                    <Button
+                        title="Take Photo"
+                        onPress={async () => _takePhoto(this.camera)}
                     />
                 </View>
             );

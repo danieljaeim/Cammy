@@ -26,20 +26,28 @@ export default class App extends Component {
   render() {
 
     const { image, imageURL, lastImageURL } = this.state;
-    const { _callGoogleApi, _takeImage } = this;
+    const { _callGoogleApi, _takeImage, _updateState, _validateURL, _takePhoto } = this;
 
     return (
       <View style={styles.container}>
-        <CameraFrame />
+        <CameraFrame
+          _callGoogleApi={_callGoogleApi}
+          _updateState={_updateState}
+          _validateURL={_validateURL}
+          _takePhoto={_takePhoto}
+        />
         <Landing
           image={image}
           imageURL={imageURL}
           lastImageURL={lastImageURL}
           _takeImage={_takeImage}
+          _validateURL={_validateURL}
         />
       </View>
     );
   }
+
+
 
   _callGoogleApi = async () => {
     try {
@@ -80,7 +88,10 @@ export default class App extends Component {
     });
 
     if (!result.cancelled) {
-      this.setState({ image: result.uri, imageURL: result.base64 });
+      this.setState({
+        image: result.uri,
+        imageURL: result.base64
+      });
     } else {
       return;
     }
@@ -100,6 +111,35 @@ export default class App extends Component {
     }
     await this._handleURLRedirect(returnValue);
   };
+
+  _takePhoto = async (camera) => {
+
+    const { _callGoogleApi, _validateURL, _handleURLRedirect, _updateState } = this;
+
+    if (camera) {
+        let photoURL = await camera.takePictureAsync({
+            base64: true,
+            quality: 1
+        });
+
+        await _updateState(photoURL);
+
+        let returnValue = await _callGoogleApi();
+        returnValue = _validateURL(returnValue);
+
+        if (this.state.validURL == null) {
+            alert(`Make sure to send a valid URL`);
+            return;
+        }
+
+        if (this.state.validURL == false) {
+            alert(`This URL ${returnValue} is invalid`);
+            this.setState({ validURL: null })
+            return;
+        }
+        await _handleURLRedirect(returnValue);
+    }
+}
 
   /*
 Validates URL from taken URLString. Regex credits go to
@@ -138,6 +178,12 @@ StackOverFlow https://stackoverflow.com/questions/3809401/what-is-a-good-regular
     }
   }
 
+  _updateState = async (photoURL) => {
+    this.setState(st => ({
+      lastImageURL: st.imageURL,
+      imageURL: photoURL.base64
+    }));
+  }
 }
 
 const styles = StyleSheet.create({
