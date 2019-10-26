@@ -25,7 +25,6 @@ export default class CameraFrame extends React.Component {
     render() {
         const { hasCameraPermission, flashMode, cameraType, capturing } = this.state;
         const { width: winWidth, height: winHeight } = Dimensions.get('window');
-        console.log('hascamera', hasCameraPermission)
         if (hasCameraPermission === null) {
             return <View />;
         } else if (hasCameraPermission === false) {
