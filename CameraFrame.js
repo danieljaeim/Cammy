@@ -3,7 +3,6 @@ import { View, TouchableOpacity, Text, Dimensions } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 
-
 export default class CameraFrame extends React.Component {
     state = {
         capturing: null,
@@ -23,7 +22,7 @@ export default class CameraFrame extends React.Component {
     }
 
     render() {
-        const { hasCameraPermission, flashMode, cameraType, capturing } = this.state;
+        const { hasCameraPermission, flashMode, type, capturing } = this.state;
         const { width: winWidth, height: winHeight } = Dimensions.get('window');
         if (hasCameraPermission === null) {
             return <View />;
@@ -33,13 +32,14 @@ export default class CameraFrame extends React.Component {
             return (
                 <View>
                     <Camera
-                        type={this.state.type}
+                        type={type}
                         flashMode={flashMode}
                         ref={camera => this.camera = camera}
                         style={{
                             height: winHeight / 1.3,
                             width: winWidth,
                             position: 'relative',
+                            top: 60
                         }}
                     />
                 </View>
