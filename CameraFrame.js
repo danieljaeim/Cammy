@@ -1,14 +1,17 @@
 import * as React from 'react';
-import { View, Button, Text, Dimensions } from 'react-native';
+import { View, Button, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
+import LottieView from 'lottie-react-native';
+import Svg, { Circle } from 'react-native-svg';
+
 
 export default class CameraFrame extends React.Component {
     state = {
         capturing: null,
         hasCameraPermission: null,
         type: Camera.Constants.Type.back,
-        flashMode: Camera.Constants.FlashMode.off
+        flashMode: Camera.Constants.FlashMode.off,
     };
 
     //TOGGLE FUNCTIONS
@@ -21,9 +24,15 @@ export default class CameraFrame extends React.Component {
         this.setState({ hasCameraPermission: status === 'granted' });
     }
 
+    async componentDidUpdate(prevProps) {
+        if (this.props.isLoading !== prevProps.isLoading) {
+            this.setState({ isLoading: prevProps.isLoading })
+        }
+    }
+
     render() {
         const { hasCameraPermission, flashMode, type, capturing } = this.state;
-        const { _takePhoto } = this.props;
+        const { _takePhoto, isLoading } = this.props;
         const { width: winWidth, height: winHeight } = Dimensions.get('window');
         if (hasCameraPermission === null) {
             return <View />;
@@ -42,11 +51,32 @@ export default class CameraFrame extends React.Component {
                             position: 'relative',
                             top: 60
                         }}
-                    />
-                    <Button
-                        title="Take Photo"
-                        onPress={async () => _takePhoto(this.camera)}
-                    />
+                    >
+                        {isLoading ?
+                            <LottieView
+                                source={require("../cammy/Lottie.json")}
+                                loop
+                                autoPlay
+                            /> : null}
+                    </Camera>
+                    <TouchableOpacity 
+                        style={{ alignItems: 'center',
+                        top: 10 }}
+                        onPress={async () => _takePhoto(this.camera)}>
+                        <Svg 
+                            height={100}
+                            width={100}
+                            viewBox="0 0 100 100">
+                            <Circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                stroke="black"
+                                strokeWidth="2.5"
+                                fill="white"
+                            />
+                        </Svg>
+                    </TouchableOpacity>
                 </View>
             );
         }

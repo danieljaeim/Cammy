@@ -7,11 +7,6 @@ import axios from 'react-native-axios';
 import API_KEY from './apikey';
 import * as WebBrowser from 'expo-web-browser';
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android: 'Double tap R on your keyboard to reload,\n' + 'Shake or press menu button for dev menu',
-});
-
 export default class App extends Component {
 
   constructor(props) {
@@ -19,14 +14,19 @@ export default class App extends Component {
     this.state = {
       image: null,
       imageURL: null,
-      lastImageURL: null
+      lastImageURL: null,
+      isLoading: false
     }
   }
 
   render() {
-
-    const { image, imageURL, lastImageURL } = this.state;
-    const { _callGoogleApi, _takeImage, _updateState, _validateURL, _takePhoto } = this;
+    const { image, imageURL, lastImageURL, isLoading } = this.state;
+    const { _callGoogleApi,
+            _takeImage,
+            _updateState,
+            _validateURL,
+            _takePhoto,
+            _changeLoading } = this;
 
     return (
       <View style={styles.container}>
@@ -35,6 +35,8 @@ export default class App extends Component {
           _updateState={_updateState}
           _validateURL={_validateURL}
           _takePhoto={_takePhoto}
+          _changeLoading={ _changeLoading }
+          isLoading={ isLoading }
         />
         <Landing
           image={image}
@@ -47,6 +49,13 @@ export default class App extends Component {
     );
   }
 
+  _changeLoading = async (isLoading) => {
+    if (isLoading !== this.state.isLoading) {
+      this.setState({ 
+        isLoading: isLoading
+      })
+    }
+  }
 
 
   _callGoogleApi = async () => {
@@ -73,13 +82,17 @@ export default class App extends Component {
         }
       });
 
+      await this._changeLoading(false);
       return response.data.responses[0].fullTextAnnotation.text;
     } catch (error) {
-      console.error("ERRORFOUND", error);
+      throw error;
     }
   }
 
   _takeImage = async () => {
+
+    const { _changeLoading } = this;
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
@@ -96,6 +109,7 @@ export default class App extends Component {
       return;
     }
 
+    await _changeLoading(true);
     let returnValue = await this._callGoogleApi();
     returnValue = this._validateURL(returnValue);
 
@@ -114,7 +128,7 @@ export default class App extends Component {
 
   _takePhoto = async (camera) => {
 
-    const { _callGoogleApi, _validateURL, _handleURLRedirect, _updateState } = this;
+    const { _callGoogleApi, _changeLoading, _validateURL, _handleURLRedirect, _updateState } = this;
 
     if (camera) {
         let photoURL = await camera.takePictureAsync({
@@ -124,6 +138,7 @@ export default class App extends Component {
 
         await _updateState(photoURL);
 
+        await _changeLoading(true);
         let returnValue = await _callGoogleApi();
         returnValue = _validateURL(returnValue);
 
@@ -148,6 +163,7 @@ StackOverFlow https://stackoverflow.com/questions/3809401/what-is-a-good-regular
 
   _validateURL = (urlString) => {
     urlString = urlString.replace(/(\r\n|\n|\r)/gm, "");
+    urlString = urlString.split(" ").join("");
 
     if (urlString.substring(0, 7) !== 'http://') {
       urlString = 'http://' + urlString;
@@ -165,14 +181,12 @@ StackOverFlow https://stackoverflow.com/questions/3809401/what-is-a-good-regular
 
   _handleURLRedirect = async (returnValue) => {
     try {
-      let redirect = await WebBrowser.openBrowserAsync(returnValue,
+      await WebBrowser.openBrowserAsync(returnValue,
         {
-          toolbarColor: '#E87461',
+          toolbarColor: '#F1DAC4',
           collapseToolbar: true
         });
-      console.log(redirect);
       this.setState({ validURL: null })
-
     } catch (err) {
       throw err;
     }
@@ -191,7 +205,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    backgroundColor: '#F1DAC4',
   },
   welcome: {
     fontSize: 20,
