@@ -15,7 +15,8 @@ export default class App extends Component {
       image: null,
       imageURL: null,
       lastImageURL: null,
-      isLoading: false
+      isLoading: false,
+      timeOut: 0,
     }
   }
 
@@ -82,7 +83,8 @@ export default class App extends Component {
         }
       });
 
-      await this._changeLoading(false);
+      this.setState({ isLoading: false })
+      console.log(response.data.responses[0].fullTextAnnotation.text);
       return response.data.responses[0].fullTextAnnotation.text;
     } catch (error) {
       throw error;
@@ -91,7 +93,7 @@ export default class App extends Component {
 
   _takeImage = async () => {
 
-    const { _changeLoading } = this;
+    const { _changeLoading, _callGoogleApi } = this;
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -110,7 +112,7 @@ export default class App extends Component {
     }
 
     await _changeLoading(true);
-    let returnValue = await this._callGoogleApi();
+    let returnValue = await _callGoogleApi();
     returnValue = this._validateURL(returnValue);
 
     if (this.state.validURL == null) {
@@ -128,7 +130,7 @@ export default class App extends Component {
 
   _takePhoto = async (camera) => {
 
-    const { _callGoogleApi, _changeLoading, _validateURL, _handleURLRedirect, _updateState } = this;
+    const { _callGoogleApi, _validateURL, _handleURLRedirect, _updateState } = this;
 
     if (camera) {
         let photoURL = await camera.takePictureAsync({
@@ -138,9 +140,10 @@ export default class App extends Component {
 
         await _updateState(photoURL);
 
-        await _changeLoading(true);
+        this.setState(st => ({ isLoading: true }));
         let returnValue = await _callGoogleApi();
         returnValue = _validateURL(returnValue);
+        console.log("returnval", returnValue);
 
         if (this.state.validURL == null) {
             alert(`Make sure to send a valid URL`);

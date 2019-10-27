@@ -25,12 +25,11 @@ export default class Landing extends React.Component {
                     top: 20,
                     left: 120
                 }}>
-                    <TouchableOpacity 
+                    <Button
+                        title="CameraRoll"
                         style={{ alignItems: 'center' }}
-                        onPress={async () => _takePhoto(this.camera)}>
-                            <Image href={'./images/CameraRoll.svg'}
-                            />
-                    </TouchableOpacity>
+                        onPress={_takeImage}>
+                    </Button>
                 </View>
             );
         }
